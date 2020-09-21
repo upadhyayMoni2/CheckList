@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.0.3/css/font-awesome.css"/>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="wid.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        var recordData = {
+            "Check_List_Name" : "Test",
+            "Name" : "Test Name",
+            "Description" : "Test Desc"
+        }
+        /*
+        * Subscribe to the EmbeddedApp onPageLoad event before initializing 
+        */
+        
+        ZOHO.embeddedApp.on("PageLoad",function(data)
+        {
+            console.log(data);
+            refresh();
+            /*ZOHO.CRM.API.insertRecord({Entity:"Check_List",APIData:recordData}).then(function(data){
+                console.log(data);
+            });*/
+            //Custom Bussiness logic goes here
+        })
+
+        /*
+        * initializing the widget.
+        */
+        ZOHO.embeddedApp.init();
+        var refresh = function(){
+            ZOHO.CRM.API.getAllRecords({Entity:"Check_List",sort_order:"asc",per_page:20,page:1})
+                .then(function(data){
+                console.log(data)
+                    $('#ul').empty();
+                    data.data.forEach(element => {
+                        var formCheck = $("<div/>", { 
+                            class: "form-check"
+                        })
+                        var li = $("<li/>",{ 
+                            class: element.Completed?"completed":""
+                        })
+                        var label = $("<label/>", { 
+                            class: "form-check-label"
+                        })
+                        var checkbox = $("<input/>", { 
+                            class: "checkbox",
+                            type: "checkbox",
+                            value: element.id,
+                            checked: element.Completed,
+                            onchange: "update(this.value,this.checked)"
+                        })
+                        var i1 = $("<i/>", { 
+                            class: "input-helper"
+                        })
+                        var i2 = $("<i/>", { 
+                            class: "remove mdi mdi-close-circle-outline",
+                            "data-id": element.id,
+                            onclick: "deleteRec(this)"
+                        })
+                        label.append(checkbox);
+                        label.append(element.Description);
+                        label.append(i1);
+                        formCheck.append(label);
+                        li.append(formCheck);
+                        li.append(i2);
+                        li.appendTo('#ul');
+
+                    });
+            })
+        }
+        
+        var update = function(id,checked){
+            var config={
+                Entity:"Check_List",
+                APIData:{
+                    "id": id,
+                    "Completed": checked
+                },
+            }
+            ZOHO.CRM.API.updateRecord(config)
+            .then(function(data){
+                console.log(data)
+                refresh();
+            })
+        };
+
+        var insert = function(){
+            var des = $('#input').val();
+            var recordData = {
+                "Check_List_Name" : des,
+                "Name" : des,
+                "Description" : des
+            }
+            var config={
+                Entity:"Check_List",
+                APIData:recordData,
+            }
+            ZOHO.CRM.API.insertRecord(config)
+            .then(function(data){
+                console.log(data)
+                $('#input').val('');
+                refresh();
+            })
+        };
+
+        var deleteRec = function(id){
+            var config={
+                Entity:"Check_List",
+                RecordID: id.getAttribute('data-id')
+            }
+            ZOHO.CRM.API.deleteRecord(config)
+            .then(function(data){
+                console.log(data)
+                refresh();
+            })
+        }
+       
+    </script>
+  </head>
+  <body>
+    <div class="page-content page-container" id="page-content">
+      <div class="padding">
+          <div class="row container d-flex justify-content-center">
+              <div class="col-lg-12">
+                  <div class="card px-3">
+                      <div class="card-body">
+                          <h4 class="card-title">Check List</h4>
+                          <div class="add-items d-flex"> <input type="text" id="input" class="form-control todo-list-input" placeholder="What do you need to do today?"> <button onclick="insert()" type="button" class="add btn btn-primary font-weight-bold todo-list-add-btn">Add</button> </div>
+                          <div class="list-wrapper">
+                              <ul id="ul" class="d-flex flex-column-reverse todo-list">
+                                  
+                              </ul>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+  </body>
+</html>
